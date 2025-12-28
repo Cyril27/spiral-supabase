@@ -23,12 +23,20 @@
 
   <h1>Draw your spiral</h1>
 
-  <div id="controls">
-    <button id="clear">Clear</button>
-    <button id="save">Save as PNG</button>
+  <div style="display:flex; gap:20px;">
+    <div id="formColumn">
+      <h2>Participant Info</h2>
+      <label>Name:<br><input id="name" type="text"></label><br><br>
+      <label>Age:<br><input id="age" type="number"></label><br><br>
+      <label>Stage:<br><input id="stage" type="text"></label><br><br>
+      <button id="saveAll">Save Drawing + Info</button>
+    </div>
+  
+    <div>
+      <canvas id="drawingPad" width="400" height="400"></canvas><br>
+      <button id="clear">Clear</button>
+    </div>
   </div>
-
-  <canvas id="drawingPad" width="600" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById("drawingPad");
@@ -88,10 +96,40 @@
     };
 
     // Save button
-    document.getElementById("save").onclick = () => {
+    document.getElementById("saveAll").onclick = () => {
+      const name = document.getElementById("name").value;
+      const age = document.getElementById("age").value;
+      const stage = document.getElementById("stage").value;
+
+      // Offscreen canvas
+      const outCanvas = document.createElement("canvas");
+      const ctxOut = outCanvas.getContext("2d");
+
+      const formWidth = 200;
+      const padWidth = canvas.width;
+      const height = canvas.height;
+
+      outCanvas.width = formWidth + padWidth + 20;
+      outCanvas.height = height;
+
+      // Fill background
+      ctxOut.fillStyle = "#fff";
+      ctxOut.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+      // Draw text on left
+      ctxOut.fillStyle = "#000";
+      ctxOut.font = "16px sans-serif";
+      ctxOut.fillText(`Name: ${name}`, 10, 40);
+      ctxOut.fillText(`Age: ${age}`, 10, 80);
+      ctxOut.fillText(`Stage: ${stage}`, 10, 120);
+
+      // Draw user drawing on right
+      ctxOut.drawImage(canvas, formWidth + 20, 0);
+
+      // Save as PNG
       const link = document.createElement("a");
-      link.download = "spiral.png";
-      link.href = canvas.toDataURL("image/png");
+      link.download = "spiral_with_info.png";
+      link.href = outCanvas.toDataURL("image/png");
       link.click();
     };
   </script>
