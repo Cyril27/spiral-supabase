@@ -101,36 +101,23 @@
       const age = document.getElementById("age").value;
       const stage = document.getElementById("stage").value;
 
-      // Offscreen canvas
-      const outCanvas = document.createElement("canvas");
-      const ctxOut = outCanvas.getContext("2d");
+      // ------------------------
+      // 1️⃣ Save image as PNG
+      // ------------------------
+      const imageLink = document.createElement("a");
+      imageLink.download = "spiral.png";
+      imageLink.href = canvas.toDataURL("image/png");
+      imageLink.click();
 
-      const formWidth = 200;
-      const padWidth = canvas.width;
-      const height = canvas.height;
-
-      outCanvas.width = formWidth + padWidth + 20;
-      outCanvas.height = height;
-
-      // Fill background
-      ctxOut.fillStyle = "#fff";
-      ctxOut.fillRect(0, 0, outCanvas.width, outCanvas.height);
-
-      // Draw text on left
-      ctxOut.fillStyle = "#000";
-      ctxOut.font = "16px sans-serif";
-      ctxOut.fillText(`Name: ${name}`, 10, 40);
-      ctxOut.fillText(`Age: ${age}`, 10, 80);
-      ctxOut.fillText(`Stage: ${stage}`, 10, 120);
-
-      // Draw user drawing on right
-      ctxOut.drawImage(canvas, formWidth + 20, 0);
-
-      // Save as PNG
-      const link = document.createElement("a");
-      link.download = "spiral_with_info.png";
-      link.href = outCanvas.toDataURL("image/png");
-      link.click();
+      // ------------------------
+      // 2️⃣ Save metadata as TXT
+      // ------------------------
+      const textData = `Name: ${name}\nAge: ${age}\nStage: ${stage}`;
+      const blob = new Blob([textData], { type: "text/plain" });
+      const textLink = document.createElement("a");
+      textLink.download = "data.txt";
+      textLink.href = URL.createObjectURL(blob);
+      textLink.click();
     };
   </script>
 
