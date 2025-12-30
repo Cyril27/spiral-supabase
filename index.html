@@ -3,123 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <title>Spiral Drawing Pad</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin: 20px;
-    }
-    canvas {
-      border: 1px solid #333;
-      touch-action: none; /* important for touch devices */
-      cursor: crosshair;
-    }
-    #controls {
-      margin: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <h1>Draw your spiral</h1>
+<h1>Spiral Drawing Task</h1>
 
-  <div style="display:flex; gap:20px;">
-    <div id="formColumn">
-      <h2>Participant Info</h2>
-      <label>Name:<br><input id="name" type="text"></label><br><br>
-      <label>Age:<br><input id="age" type="number"></label><br><br>
-      <label>Stage:<br><input id="stage" type="text"></label><br><br>
-      <button id="saveAll">Save Drawing + Info</button>
-    </div>
-  
-    <div>
-      <canvas id="drawingPad" width="400" height="400"></canvas><br>
-      <button id="clear">Clear</button>
-    </div>
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="meta">Metadata</div>
+  <div class="tab" data-tab="spiral1">Spiral 1</div>
+  <div class="tab" data-tab="spiral2">Spiral 2</div>
+  <div class="tab" data-tab="wave1">Wave 1</div>
+  <div class="tab" data-tab="wave2">Wave 2</div>
+</div>
+
+<button id="saveBtn">Save all</button>
+
+
+
+<!-- Metadata tab -->
+<div id="meta" class="tab-content active">
+  <h2>Participant Info</h2>
+  <label>Name: <input id="name" type="text"></label>
+  <label>Age: <input id="age" type="number"></label>
+  <label>Stage: <input id="stage" type="text"></label>
+  <br>
+  <button class="next-btn" data-next="spiral1">Next</button>
+</div>
+
+<!-- Spiral 1 -->
+<div id="spiral1" class="tab-content">
+  <h2>Spiral 1</h2>
+  <div class="canvas-container">
+    <canvas id="template_spiral1" width="400" height="400"></canvas>
+    <canvas id="canvas_spiral1" width="400" height="400"></canvas>
   </div>
+  <br>
+  <button class="clear-btn" data-canvas="canvas_spiral1">Clear</button>
+  <br>
+  <button class="previous-btn" data-next="meta">Previous</button>
+  <button class="next-btn" data-next="spiral2">Next</button>
+  
+</div>
 
-  <script>
-    const canvas = document.getElementById("drawingPad");
-    const ctx = canvas.getContext("2d");
+<!-- Spiral 2 -->
+<div id="spiral2" class="tab-content">
+  <h2>Spiral 2</h2>
+  <div class="canvas-container">
+    <canvas id="template_spiral2" width="400" height="400"></canvas>
+    <canvas id="canvas_spiral2" width="400" height="400"></canvas>
+  </div>
+  <br>
+  <button class="clear-btn" data-canvas="canvas_spiral2">Clear</button>
+  <br>
+  <button class="previous-btn" data-next="spiral1">Previous</button>
+  <button class="next-btn" data-next="wave1">Next</button>
+</div>
 
-    ctx.lineWidth = 1;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#000";
+<!-- Wave 1 -->
+<div id="wave1" class="tab-content">
+  <h2>Wave 1</h2>
+  <div class="canvas-container">
+    <canvas id="template_wave1" width="400" height="400"></canvas>
+    <canvas id="canvas_wave1" width="400" height="400"></canvas>
+  </div>
+  <br>
+  <button class="clear-btn" data-canvas="canvas_wave1">Clear</button>
+  <br>
+  <button class="previous-btn" data-next="spiral2">Previous</button>
+  <button class="next-btn" data-next="wave2">Next</button>
+</div>
 
-    let drawing = false;
+<!-- Wave 2 -->
+<div id="wave2" class="tab-content">
+  <h2>Wave 2</h2>
+  <div class="canvas-container">
+    <canvas id="template_wave2" width="400" height="400"></canvas>
+    <canvas id="canvas_wave2" width="400" height="400"></canvas>
+  </div>
+  <br>
+  <button class="clear-btn" data-canvas="canvas_wave2">Clear</button>
+  <br>
+  <button class="previous-btn" data-next="wave1">Previous</button>
+</div>
 
-    function getPos(e) {
-      if (e.touches) {
-        return {
-          x: e.touches[0].clientX - canvas.getBoundingClientRect().left,
-          y: e.touches[0].clientY - canvas.getBoundingClientRect().top
-        };
-      } else {
-        return {
-          x: e.clientX - canvas.getBoundingClientRect().left,
-          y: e.clientY - canvas.getBoundingClientRect().top
-        };
-      }
-    }
-
-    function startDraw(e) {
-      drawing = true;
-      const pos = getPos(e);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
-
-    function draw(e) {
-      if (!drawing) return;
-      const pos = getPos(e);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    }
-
-    function endDraw() {
-      drawing = false;
-    }
-
-    canvas.addEventListener("mousedown", startDraw);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", endDraw);
-    canvas.addEventListener("mouseout", endDraw);
-
-    canvas.addEventListener("touchstart", startDraw);
-    canvas.addEventListener("touchmove", draw);
-    canvas.addEventListener("touchend", endDraw);
-    canvas.addEventListener("touchcancel", endDraw);
-
-    // Clear button
-    document.getElementById("clear").onclick = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-
-    // Save button
-    document.getElementById("saveAll").onclick = () => {
-      const name = document.getElementById("name").value;
-      const age = document.getElementById("age").value;
-      const stage = document.getElementById("stage").value;
-
-      // ------------------------
-      // 1️⃣ Save image as PNG
-      // ------------------------
-      const imageLink = document.createElement("a");
-      imageLink.download = "spiral.png";
-      imageLink.href = canvas.toDataURL("image/png");
-      imageLink.click();
-
-      // ------------------------
-      // 2️⃣ Save metadata as TXT
-      // ------------------------
-      const textData = `Name: ${name}\nAge: ${age}\nStage: ${stage}`;
-      const blob = new Blob([textData], { type: "text/plain" });
-      const textLink = document.createElement("a");
-      textLink.download = "data.txt";
-      textLink.href = URL.createObjectURL(blob);
-      textLink.click();
-    };
-  </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
