@@ -1,0 +1,59 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  text-align: center;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: 1px solid #333;
+  border-bottom: none;
+  background: #eee;
+}
+
+.tab.active {
+  background: white;
+  font-weight: bold;
+}
+
+.tab-content {
+  display: none;
+  border: 1px solid #333;
+  padding: 20px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+canvas {
+  border: 1px solid #333;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.canvas-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  margin: auto;
+}
+
+.canvas-container canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
