@@ -17,54 +17,117 @@ function setupCanvas(canvas) {
   const ctx = canvas.getContext("2d");
   ctx.lineWidth = 1;
   ctx.lineCap = "round";
+  ctx.strokeStyle = "black";
 
   let drawing = false;
+  let start_time = 0;
+  let reset_draw = false;
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    return { x, y };
+    if (e.touches) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top
+      };
+    }
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
   }
 
-  canvas.addEventListener("mousedown", e => {
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  });
+  function startDraw(e) {
 
-  canvas.addEventListener("mousemove", e => {
+    if (reset_draw) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      reset_draw = false;
+    }
+    
+    drawing = true;
+    start_time = Date.now();
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+
+  function draw(e) {
     if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
+    const { x, y } = getPos(e);
+    ctx.lineTo(x, y);
     ctx.stroke();
-  });
+  }
 
-  canvas.addEventListener("mouseup", () => drawing = false);
-  canvas.addEventListener("mouseout", () => drawing = false);
+  function endDraw() {
 
-  canvas.addEventListener("touchstart", e => {
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  });
+    if (!drawing) return;
 
+    if (drawing) {
+      canvasDrawn[canvas.id] = true;
+      updateSaveButton();
+    }
+
+    drawing = false;
+    reset_draw = true;
+    const end_time = Date.now();
+    const duration = end_time - start_time;
+    console.log(`Drawing duration: ${duration} ms`);
+  }
+
+  // Mouse
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", draw);
+  canvas.addEventListener("mouseup", endDraw);
+  canvas.addEventListener("mouseleave", endDraw);
+
+  // Touch
+  canvas.addEventListener("touchstart", startDraw);
   canvas.addEventListener("touchmove", e => {
-    if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    draw(e);
     e.preventDefault();
   });
+  canvas.addEventListener("touchend", endDraw);
 
-  canvas.addEventListener("touchend", () => drawing = false);
+  // Pressure sensitivity (if supported)
+  canvas.addEventListener("pointerdown", (e) => {
+    console.log("Pressure:", e.pressure); // 0 to 1
+    document.getElementById("pressure").textContent = `Pressure: ${e.pressure}`;
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pressure > 0) {
+      console.log("Drawing pressure:", e.pressure);
+      document.getElementById("pressure").textContent = `Pressure: ${e.pressure}`;
+    }
+  });
+  
 }
+
+
 
 function clearCanvas(canvasId) {
   const canvas = document.getElementById(canvasId);
   canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+  canvasDrawn[canvasId] = false;
+  updateSaveButton();
+}
+
+
+const canvasDrawn = {
+  canvas_spiral1: false,
+  canvas_spiral2: false,
+  canvas_wave1: false,
+  canvas_wave2: false
+};
+
+function isCanvasEmpty(canvas) {
+  const ctx = canvas.getContext("2d");
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  return !pixels.some(value => value !== 0);
+}
+
+function markCanvasUsed() {
+  updateSaveButton();
 }
 
 function loadTemplate(canvasId, imagePath) {
@@ -86,7 +149,7 @@ function downloadImage(canvas, filename) {
   link.click();
 }
 
-async function savePatientMetadata(name, age, stage, timestamp) {
+async function savePatientMetadata(first_name, last_name, age, sex, stage, smoker, writing_hand, timestamp) {
   try {
     // Convert timestamp format to ISO 8601
     const [date, time] = timestamp.split("-");
@@ -98,9 +161,13 @@ async function savePatientMetadata(name, age, stage, timestamp) {
       .from("patients")
       .insert([
         {
-          name: name,
-          age: parseInt(age) || null,
-          stage: stage,
+          first_name: first_name,
+          last_name: last_name,
+          age: parseInt(age),
+          sex: sex,
+          stage: parseInt(stage),
+          smoker: smoker,
+          writing_hand: writing_hand,
           timestamp: isoTimestamp
         }
       ])
@@ -130,7 +197,7 @@ async function saveImage(patientId, spiralNumber, canvas, subfolder) {
     // Convert canvas to PNG Blob
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
 
-    const filePath = `${subfolder}/spiral_${patientId}_${spiralNumber}_${Date.now()}.png`;
+    const filePath = `${subfolder}/${subfolder}_${patientId}_${spiralNumber}.png`;
 
     // Upload Blob to Supabase Storage
     const { data, error } = await supabaseClient
@@ -150,48 +217,79 @@ async function saveImage(patientId, spiralNumber, canvas, subfolder) {
 }
 
 
+function canSave() {
+  return (
+    document.getElementById("first-name").value.trim() &&
+    document.getElementById("last-name").value.trim() &&
+    document.getElementById("age").value &&
+    document.querySelector('input[name="sex"]:checked') &&
+    document.querySelector('input[name="stage"]:checked') &&
+    document.querySelector('input[name="smoker"]:checked') &&
+    document.querySelector('input[name="writing-hand"]:checked') &&
+    Object.values(canvasDrawn).every(Boolean)
+  );
+}
+
+
+function updateSaveButton() {
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.disabled = !canSave();
+}
 
 
 
-function saveAll() {
-  const now = new Date();
-  const timestamp = now.getFullYear() + "_" +
-                    String(now.getMonth() + 1).padStart(2, "0") + "_" +
-                    String(now.getDate()).padStart(2, "0") + "-" +
-                    String(now.getHours()).padStart(2, "0") + "_" +
-                    String(now.getMinutes()).padStart(2, "0") + "_" +
-                    String(now.getSeconds()).padStart(2, "0");
 
-  const name = document.getElementById("name").value;
-  const age = document.getElementById("age").value;
-  const stage = document.getElementById("stage").value;
 
-  // Validate inputs
-  if (!name.trim()) {
-    alert("Please enter a name");
-    return;
+
+async function saveAll() {
+  
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+
+    const now = new Date();
+    const timestamp = now.getFullYear() + "_" +
+                      String(now.getMonth() + 1).padStart(2, "0") + "_" +
+                      String(now.getDate()).padStart(2, "0") + "-" +
+                      String(now.getHours()).padStart(2, "0") + "_" +
+                      String(now.getMinutes()).padStart(2, "0") + "_" +
+                      String(now.getSeconds()).padStart(2, "0");
+
+    const first_name = document.getElementById("first-name").value;
+    const last_name = document.getElementById("last-name").value;
+    const age = document.getElementById("age").value ? document.getElementById("age").value : "";
+    const sex = document.querySelector('input[name="sex"]:checked') ? document.querySelector('input[name="sex"]:checked').value : "";
+    const stage = document.querySelector('input[name="stage"]:checked') ? document.querySelector('input[name="stage"]:checked').value : "";
+    const smoker = document.querySelector('input[name="smoker"]:checked') ? document.querySelector('input[name="smoker"]:checked').value === "true": null;
+    const writing_hand = document.querySelector('input[name="writing-hand"]:checked') ? document.querySelector('input[name="writing-hand"]:checked').value : "";
+
+
+    // Save metadata to Supabase
+    savePatientMetadata(first_name, last_name, age, sex, stage, smoker, writing_hand, timestamp).then(patientId => {
+      if (patientId) {
+        // Save spirals linked to patient
+        saveImage(patientId, 1, document.getElementById("canvas_spiral1"), "spiral");
+        saveImage(patientId, 2, document.getElementById("canvas_spiral2"), "spiral");
+        saveImage(patientId, 1, document.getElementById("canvas_wave1"), "wave");
+        saveImage(patientId, 2, document.getElementById("canvas_wave2"), "wave");
+      }
+    });
+
+    alert("Saved successfully!");
+    saveBtn.textContent = "Save";
+  } catch (err) {
+    alert("Error during save process: " + err.message);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save";
   }
-
-  // Save metadata to Supabase
-  savePatientMetadata(name, age, stage, timestamp).then(patientId => {
-    if (patientId) {
-      // Save spirals linked to patient
-      saveImage(patientId, 1, document.getElementById("canvas_spiral1"), "spiral");
-      saveImage(patientId, 2, document.getElementById("canvas_spiral2"), "spiral");
-      saveImage(patientId, 1, document.getElementById("canvas_wave1"), "wave");
-      saveImage(patientId, 2, document.getElementById("canvas_wave2"), "wave");
-    }
-  });
-
-  // Save spirals with delays
-  // setTimeout(() => downloadImage(document.getElementById("canvas_spiral1"), `spiral1_${timestamp}.png`), 0);
-  // setTimeout(() => downloadImage(document.getElementById("canvas_spiral2"), `spiral2_${timestamp}.png`), 100);
-  // setTimeout(() => downloadImage(document.getElementById("canvas_wave1"), `wave1_${timestamp}.png`), 200);
-  // setTimeout(() => downloadImage(document.getElementById("canvas_wave2"), `wave2_${timestamp}.png`), 300);
 }
 
 /* ---------- Initialize ---------- */
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM fully loaded");
   // Setup canvas drawing
   setupCanvas(document.getElementById("canvas_spiral1"));
   setupCanvas(document.getElementById("canvas_spiral2"));
@@ -234,6 +332,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("change", updateSaveButton);
+    input.addEventListener("input", updateSaveButton);
+  });
+
   // Setup save button
   document.getElementById("saveBtn").addEventListener("click", saveAll);
-});
+  });
