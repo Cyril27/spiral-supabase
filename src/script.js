@@ -5,8 +5,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ---------- Tabs ---------- */
 import { openTab } from "./ui/tabs.js";
-
-
+/* ---------- Utils ---------- */
 import { getPressure } from "./utils/pressure.js";
 import { mean } from "./utils/math.js";
 
@@ -268,24 +267,7 @@ async function uploadDrawingImage(drawingId, canvas, drawingType) {
 
 
 
-function canSave() {
-  return (
-    document.getElementById("first-name").value.trim() &&
-    document.getElementById("last-name").value.trim() &&
-    document.getElementById("age").value &&
-    document.querySelector('input[name="sex"]:checked') &&
-    document.querySelector('input[name="stage"]:checked') &&
-    document.querySelector('input[name="smoker"]:checked') &&
-    document.querySelector('input[name="writing-hand"]:checked') &&
-    Object.values(canvasDrawn).every(Boolean)
-  );
-}
-
-
-function updateSaveButton() {
-  const saveBtn = document.getElementById("saveBtn");
-  saveBtn.disabled = !canSave();
-}
+import { updateSaveButton } from "./ui/saveButton.js";
 
 
 
