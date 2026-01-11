@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Spiral Drawing Pad</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 
@@ -120,10 +120,7 @@
 
 <!-- Spiral 1 -->
 <div id="spiral1" class="tab-content">
-  <h2>Spiral 1</h2>
-  <div id="pressure"> Pressure value</div>
-
-  
+  <h2>Spiral 1</h2>  
   <div class="canvas-container">
     <canvas id="template_spiral1" width="400" height="400"></canvas>
     <canvas id="canvas_spiral1" width="400" height="400"></canvas>
@@ -178,7 +175,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
+<script type="module" src="./src/script.js"></script>
 
 </body>
 </html>
