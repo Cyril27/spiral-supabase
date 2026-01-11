@@ -4,28 +4,11 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ---------- Tabs ---------- */
-function openTab(id) {
-  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-
-  document.getElementById(id).classList.add("active");
-  document.querySelector(`[data-tab="${id}"]`).classList.add("active");
-}
+import { openTab } from "./utils/tabs.js";
 
 
-import { getPressure } from "./math/pressure.js";
-
-
-function mean(arr) {
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
-function std(arr) {
-  const m = mean(arr);
-  return Math.sqrt(
-    arr.reduce((sum, x) => sum + (x - m) ** 2, 0) / arr.length
-  );
-}
+import { getPressure } from "./utils/pressure.js";
+import { mean } from "./utils/math.js";
 
 
 /* ---------- Drawing ---------- */
