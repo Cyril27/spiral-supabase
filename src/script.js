@@ -14,6 +14,9 @@ const startBtn = document.getElementById("start-tremor-btn");
 const stopBtn = document.getElementById("stop-tremor-btn");
 const tremorMagEl = document.getElementById("tremor-mag");
 
+const tremor_plotCanvas = document.getElementById("tremor-plot");
+const tremor_ctx = tremor_plotCanvas.getContext("2d");
+
 let tremorRunning = false;
 let tremorData = [];
 
@@ -41,6 +44,49 @@ function startTremor() {
     tremorMagEl.textContent = "Motion sensors not supported";
   }
 }
+
+// Stop tremor measurement and plot results
+function stopTremor() {
+  tremorRunning = false;
+  startBtn.disabled = false;
+  window.removeEventListener("devicemotion", onMotion);
+
+  if (tremorData.length < 2) {
+    tremorMagEl.textContent = "Insufficient data collected";
+    return;
+  }
+
+  const mags = tremorData.map(d => d.mag);
+  const avgMag = mean(mags);
+  tremorMagEl.textContent = `Avg Magnitude: ${avgMag.toFixed(2)}`;
+
+  // Plot tremor data
+  tremor_ctx.clearRect(0, 0, tremor_plotCanvas.width, tremor_plotCanvas.height);
+
+  const maxMag = Math.max(...mags);
+  const minMag = Math.min(...mags);
+  const scaleY = tremor_plotCanvas.height / (maxMag - minMag || 1); // avoid divide by 0
+  const scaleX = tremor_plotCanvas.width / mags.length;
+
+  tremor_ctx.beginPath();
+  tremor_ctx.moveTo(0, tremor_plotCanvas.height - (mags[0] - minMag) * scaleY);
+
+  for (let i = 1; i < mags.length; i++) {
+    const x = i * scaleX;
+    const y = tremor_plotCanvas.height - (mags[i] - minMag) * scaleY;
+    tremor_ctx.lineTo(x, y);
+  }
+
+  tremor_ctx.strokeStyle = "#007bff";
+  tremor_ctx.lineWidth = 2;
+  tremor_ctx.stroke();
+
+
+}
+
+stopBtn.addEventListener("click", () => {
+  stopTremor();
+});
 
 startBtn.addEventListener("click", async () => {
   // Request permission on iOS
