@@ -142,19 +142,7 @@ function clearCanvas(canvasId) {
 }
 
 
-const canvasDrawn = {
-  canvas_spiral1: false,
-  canvas_spiral2: false,
-  canvas_wave1: false,
-  canvas_wave2: false
-};
-
-const canvasDirty = {
-  canvas_spiral1: false,
-  canvas_spiral2: false,
-  canvas_wave1: false,
-  canvas_wave2: false
-};
+import { canvasDrawn, canvasDirty } from "./canvas/state.js";
 
 function isCanvasEmpty(canvas) {
   const ctx = canvas.getContext("2d");

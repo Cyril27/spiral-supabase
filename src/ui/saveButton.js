@@ -1,3 +1,5 @@
+import { canvasDrawn } from "../canvas/state.js";
+
 function canSave() {
   return (
     document.getElementById("first-name").value.trim() &&
