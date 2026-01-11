@@ -16,6 +16,8 @@
   <div class="tab" data-tab="spiral2">Spiral 2</div>
   <div class="tab" data-tab="wave1">Wave 1</div>
   <div class="tab" data-tab="wave2">Wave 2</div>
+  <div class="tab" data-tab="tremor">Tremor</div>
+
 </div>
 
 <button id="saveBtn" type="button" disabled>Save</button>
@@ -173,6 +175,24 @@
   <br>
   <button class="previous-btn" data-next="wave1">Previous</button>
 </div>
+
+
+<!-- Tremor -->
+<div id="tremor" class="tab-content">
+  <h2>Tremor</h2>
+
+  <button id="start-tremor-btn" class="start-btn">Start</button>
+  <button id="stop-tremor-btn" class="start-btn">Stop</button>
+
+
+
+  <div>
+    Tremor magnitude: <span id="tremor-mag">0</span>
+  </div>
+</div>
+
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module" src="./src/script.js"></script>

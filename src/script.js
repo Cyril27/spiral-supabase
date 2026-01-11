@@ -10,6 +10,56 @@ import { getPressure } from "./utils/pressure.js";
 import { mean } from "./utils/math.js";
 
 
+const startBtn = document.getElementById("start-tremor-btn");
+const stopBtn = document.getElementById("stop-tremor-btn");
+const tremorMagEl = document.getElementById("tremor-mag");
+
+let tremorRunning = false;
+let tremorData = [];
+
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a) {
+    tremorMagEl.textContent = "Not available on this device";
+    return;
+  }
+
+  const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+  tremorData.push({ t: performance.now(), mag });
+
+  tremorMagEl.textContent = mag.toFixed(2);
+}
+
+function startTremor() {
+  tremorData = [];
+  tremorRunning = true;
+  startBtn.disabled = true;
+
+  if (window.DeviceMotionEvent) {
+    window.addEventListener("devicemotion", onMotion);
+  } else {
+    tremorMagEl.textContent = "Motion sensors not supported";
+  }
+}
+
+startBtn.addEventListener("click", async () => {
+  // Request permission on iOS
+  if (
+    typeof DeviceMotionEvent !== "undefined" &&
+    typeof DeviceMotionEvent.requestPermission === "function"
+  ) {
+    const response = await DeviceMotionEvent.requestPermission();
+    if (response !== "granted") {
+      tremorMagEl.textContent = "Motion permission denied";
+      return;
+    }
+  }
+
+  startTremor();
+});
+
+
+
 /* ---------- Drawing ---------- */
 function setupCanvas(canvas) {
   const ctx = canvas.getContext("2d");
@@ -42,23 +92,6 @@ function setupCanvas(canvas) {
       y: e.clientY - rect.top
     };
   }
-
-  function getVelocity(e, lastPos, lastTime) {
-    const currentTime = Date.now();
-    const deltaTime = currentTime - lastTime;
-    console.log("Delta Time:", deltaTime);
-
-    const { x, y } = getPos(e);
-    const deltaX = x - lastPos.x;
-    const deltaY = y - lastPos.y;
-    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-
-    const velocity = distance / (deltaTime || 1); // pixels per ms
-
-    return { velocity, currentTime, currentPos: { x, y } };
-  }
-
-
 
 
   function startDraw(e) {
@@ -144,15 +177,7 @@ function clearCanvas(canvasId) {
 
 import { canvasDrawn, canvasDirty } from "./canvas/state.js";
 
-function isCanvasEmpty(canvas) {
-  const ctx = canvas.getContext("2d");
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  return !pixels.some(value => value !== 0);
-}
 
-function markCanvasUsed() {
-  updateSaveButton();
-}
 
 function loadTemplate(canvasId, imagePath) {
   const canvas = document.getElementById(canvasId);
@@ -166,56 +191,6 @@ function loadTemplate(canvasId, imagePath) {
 }
 
 /* ---------- Save ---------- */
-function downloadImage(canvas, filename) {
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-
-async function savePatientMetadata(first_name, last_name, age, sex, stage, smoker, writing_hand, timestamp) {
-  try {
-    // Convert timestamp format to ISO 8601
-    const [date, time] = timestamp.split("-");
-    const [year, month, day] = date.split("_");
-    const [hours, minutes, seconds] = time.split("_");
-    const isoTimestamp = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-
-    const { data, error } = await supabaseClient
-      .from("patients")
-      .insert([
-        {
-          first_name: first_name,
-          last_name: last_name,
-          age: parseInt(age),
-          sex: sex,
-          stage: parseInt(stage),
-          smoker: smoker,
-          writing_hand: writing_hand,
-          timestamp: isoTimestamp
-        }
-      ])
-      .select();
-
-    if (error) throw error;
-    alert("Metadata saved to Supabase!");
-    return data[0].id; // Extract and return the patient ID
-  } catch (error) {
-    console.error("Error saving to Supabase:", error.message);
-    alert("Error saving metadata: " + error.message);
-    return null;
-  }
-}
-
-function canvasToBlob(canvas) {
-  return new Promise(resolve => {
-    canvas.toBlob(blob => {
-      resolve(blob);
-    }, "image/png");
-  });
-}
-
-
 async function saveDrawingRow(patientId, canvas, drawingType) {
   const { data, error } = await supabaseClient
     .from(drawingType + "s")
